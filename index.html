@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>RxAlert - Medicine Inventory Management (Fixed v2)</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    :root{--primary:#2a7cc7;--primary-dark:#1a5a9c;--primary-light:#e1f0fa;--secondary:#29b6f6;--success:#4caf50;--warning:#ff9800;--danger:#f44336;--light:#f8f9fa;--dark:#343a40;--gray:#6c757d;--light-gray:#e9ecef;--white:#fff;--radius:12px;--shadow:0 8px 24px rgba(0,0,0,.08)}
+    *{box-sizing:border-box} body{font-family:Roboto,system-ui,-apple-system,Segoe UI,Arial;background:linear-gradient(135deg,#f5f9fd,#e6f2ff);margin:0;color:#333}
+    .page{display:none;min-height:100vh}.page.active{display:block}
+    .header{position:sticky;top:0;background:var(--white);box-shadow:var(--shadow);padding:12px 20px;display:flex;justify-content:space-between;align-items:center;z-index:5}
+    .logo{display:flex;align-items:center;gap:10px;color:var(--primary)} .logo i{font-size:24px}
+    .user-info{display:flex;gap:12px;align-items:center}
+    .user-avatar{width:36px;height:36px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600}
+    .btn-sm{padding:.55rem .9rem;border:none;border-radius:10px;font-weight:600;cursor:pointer;display:inline-flex;gap:8px;align-items:center}
+    .btn-outline{background:transparent;border:1px solid var(--primary);color:var(--primary)}
+    .btn-primary{background:var(--primary);color:#fff}
+    .btn-success{background:var(--success);color:#fff}
+    .main-container{display:flex;gap:20px;max-width:1350px;margin:0 auto;padding:20px}
+    .sidebar{width:240px;background:var(--white);border-radius:12px;box-shadow:var(--shadow);padding:14px}
+    .nav-links{list-style:none;padding:0;margin:0}.nav-item{padding:12px 14px;border-radius:10px;display:flex;gap:12px;align-items:center;cursor:pointer;color:#333}
+    .nav-item.active,.nav-item:hover{background:var(--primary-light);color:var(--primary)}
+    .content{flex:1}
+    .page-header{display:flex;justify-content:space-between;align-items:center;margin:14px 0 18px}
+    .dashboard-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;margin-bottom:20px}
+    .card{background:var(--white);border-radius:12px;box-shadow:var(--shadow);padding:16px;border-top:4px solid var(--primary);cursor:default}
+    .card.clickable{cursor:pointer}
+    .card.warning{border-top-color:var(--warning)} .card.danger{border-top-color:var(--danger)} .card.success{border-top-color:var(--success)} .card.info{border-top-color:var(--secondary)}
+    .card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+    .card-icon{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--primary-light);color:var(--primary)}
+    .card-value{font-size:2rem;font-weight:700}
+    .table-container{background:var(--white);border-radius:12px;box-shadow:var(--shadow);overflow:hidden;margin-bottom:18px}
+    .table-header{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--light-gray)}
+    .table-responsive{overflow:auto} table{width:100%;border-collapse:collapse} th,td{padding:14px 16px;border-bottom:1px solid var(--light-gray);text-align:left}
+    th{background:var(--light);text-transform:uppercase;font-size:.8rem;letter-spacing:.4px;color:var(--gray)}
+    .status-badge{padding:.28rem .7rem;border-radius:999px;font-size:.8rem;font-weight:600;display:inline-block}
+    .status-active{background:rgba(76,175,80,.15);color:var(--success)} .status-warning{background:rgba(255,152,0,.15);color:var(--warning)} .status-danger{background:rgba(244,67,54,.15);color:var(--danger)}
+    .action-btn{background:transparent;border:none;width:32px;height:32px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;color:var(--gray);cursor:pointer}
+    .action-btn:hover{background:var(--light)}
+    .form-container{background:var(--white);border-radius:12px;box-shadow:var(--shadow);padding:16px;margin-bottom:18px}
+    .form-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+    .form-control{width:100%;padding:10px 12px;border:1px solid var(--light-gray);border-radius:10px}
+    .filters-container{background:var(--white);border-radius:12px;box-shadow:var(--shadow);padding:16px;margin-bottom:18px}
+    .charts-container{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px}
+    .chart-card{background:var(--white);border-radius:12px;box-shadow:var(--shadow);padding:16px}
+    .chart-wrapper{position:relative;width:100%;height:320px}
+    .login-container{background:var(--white);border-radius:16px;box-shadow:var(--shadow);max-width:420px;margin:40px auto;padding:26px}
+    .app-logo{display:flex;gap:10px;align-items:center;color:var(--primary)} .app-logo i{font-size:30px}
+    .form-toggle{display:flex;background:var(--light);border-radius:999px;gap:6px;padding:6px;margin:10px 0 16px}
+    .form-toggle-btn{flex:1;background:transparent;border:none;padding:10px 12px;border-radius:999px;font-weight:600;cursor:pointer}
+    .form-toggle-btn.active{background:var(--primary);color:#fff}
+    .password-container{position:relative} .password-toggle{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:transparent;border:none;color:var(--gray);cursor:pointer}
+    .toast-container{position:fixed;top:16px;right:16px;z-index:1000;display:flex;flex-direction:column;gap:10px}
+    .toast{padding:12px 14px;border-radius:10px;color:#fff;box-shadow:var(--shadow);font-weight:600}
+    .toast-success{background:var(--success)} .toast-warning{background:var(--warning)} .toast-error{background:var(--danger)}
+    .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000}
+    .modal-content{background:#fff;max-width:520px;width:92%;margin:6% auto;padding:18px;border-radius:14px}
+    @media (max-width:900px){.main-container{flex-direction:column}.sidebar{width:100%}.charts-container{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+
+  <!-- Toasts -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Forgot Password Modal -->
+  <div id="forgot-password-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <h3 class="modal-title">Reset Password</h3>
+        <button class="close-modal" aria-label="Close">&times;</button>
+      </div>
+      <div id="forgot-password-step1">
+        <div class="form-group">
+          <label for="reset-email">Email Address</label>
+          <input type="email" id="reset-email" class="form-control" placeholder="Enter your email" required>
+        </div>
+        <button class="btn-primary btn-sm" id="send-verification-btn"><i class="fas fa-paper-plane"></i> Send Verification Code</button>
+      </div>
+      <div id="forgot-password-step2" style="display:none">
+        <div class="form-group">
+          <label for="verification-code">Verification Code</label>
+          <input id="verification-code" class="form-control" placeholder="Enter code">
+        </div>
+        <div class="form-group">
+          <label for="new-password">New Password</label>
+          <div class="password-container">
+            <input type="password" id="new-password" class="form-control" placeholder="Enter new password">
+            <button class="password-toggle" id="new-password-toggle"><i class="fas fa-eye"></i></button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="confirm-new-password">Confirm New Password</label>
+          <input type="password" id="confirm-new-password" class="form-control" placeholder="Confirm password">
+        </div>
+        <button class="btn-primary btn-sm" id="reset-password-btn"><i class="fas fa-key"></i> Reset Password</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Medicine Modal -->
+  <div id="edit-medicine-modal" class="modal" aria-hidden="true">
+    <div class="modal-content">
+      <div class="modal-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <h3 class="modal-title">Edit Medicine</h3>
+        <button class="close-modal">&times;</button>
+      </div>
+      <form id="edit-medicine-form">
+        <div class="form-group"><label>Medicine Name</label><input id="edit-medicineName" class="form-control" required></div>
+        <div class="form-group"><label>Generic Name</label><input id="edit-genericName" class="form-control" required></div>
+        <div class="form-group"><label>Category</label><input id="edit-category" class="form-control" required></div>
+        <div class="form-group"><label>Batch Number</label><input id="edit-batchNo" class="form-control" disabled></div>
+        <div class="form-group"><label>Quantity</label><input type="number" id="edit-quantity" class="form-control" min="1" required></div>
+        <div class="form-group"><label>Unit Price (₱)</label><input type="number" id="edit-unitPrice" class="form-control" step="0.01" min="0" required></div>
+        <div class="form-group"><label>Expiration Date</label><input type="date" id="edit-expDate" class="form-control" required></div>
+        <div class="form-group"><label>Supplier</label><input id="edit-supplier" class="form-control" required></div>
+        <button class="btn-primary btn-sm" type="submit"><i class="fas fa-save"></i> Update Medicine</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit Purchase Modal -->
+  <div id="edit-purchase-modal" class="modal" aria-hidden="true">
+    <div class="modal-content">
+      <div class="modal-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <h3 class="modal-title">Edit Purchase Information</h3>
+        <button class="close-modal">&times;</button>
+      </div>
+      <form id="edit-purchase-form">
+        <div class="form-group"><label>Medicine Name</label><input id="edit-purchase-medicineName" class="form-control" required></div>
+        <div class="form-group"><label>Supplier</label><input id="edit-purchase-supplier" class="form-control" required></div>
+        <div class="form-group"><label>Purchase Order No.</label><input id="edit-poNumber" class="form-control" required></div>
+        <div class="form-group"><label>Delivery Invoice No.</label><input id="edit-invoiceNo" class="form-control" required></div>
+        <div class="form-group"><label>Quantity Received</label><input type="number" id="edit-purchase-quantity" class="form-control" min="1" required></div>
+        <div class="form-group"><label>Unit Price (₱)</label><input type="number" id="edit-purchase-unitPrice" class="form-control" min="0" step="0.01" required></div>
+        <div class="form-group"><label>Date Received</label><input type="date" id="edit-dateReceived" class="form-control" required></div>
+        <button class="btn-primary btn-sm" type="submit"><i class="fas fa-save"></i> Update Purchase</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit Supplier Modal -->
+  <div id="edit-supplier-modal" class="modal" aria-hidden="true">
+    <div class="modal-content">
+      <div class="modal-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <h3 class="modal-title">Edit Supplier</h3>
+        <button class="close-modal">&times;</button>
+      </div>
+      <form id="edit-supplier-form">
+        <div class="form-group"><label>Supplier Name</label><input id="edit-supplier-name" class="form-control" required></div>
+        <div class="form-group"><label>Contact No.</label><input id="edit-supplier-contact" class="form-control" required></div>
+        <div class="form-group"><label>Email</label><input id="edit-supplier-email" type="email" class="form-control" required></div>
+        <div class="form-group"><label>Address</label><input id="edit-supplier-address" class="form-control" required></div>
+        <button class="btn-primary btn-sm" type="submit"><i class="fas fa-save"></i> Update Supplier</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Page 1: Login/Signup -->
+  <div id="login-page" class="page active">
+    <div class="login-container" id="login-container">
+      <div class="app-logo"><i class="fas fa-pills"></i><h1>RxAlert</h1></div>
+      <p class="app-tagline" style="color:var(--gray)">Medicine Inventory & Expiration Management System</p>
+      <div class="form-toggle"><button id="login-toggle" class="form-toggle-btn active">Login</button><button id="signup-toggle" class="form-toggle-btn">Create Account</button></div>
+      <form id="login-form">
+        <div class="form-group"><label for="login-email">Email Address</label><input id="login-email" type="email" class="form-control" required></div>
+        <div class="form-group"><label for="login-password">Password</label>
+          <div class="password-container"><input id="login-password" type="password" class="form-control" required><button type="button" class="password-toggle" id="login-password-toggle"><i class="fas fa-eye"></i></button></div>
+        </div>
+        <button class="btn-primary btn-sm" type="submit"><i class="fas fa-sign-in-alt"></i> Login to Dashboard</button>
+        <div class="form-footer" style="margin-top:10px"><a href="#" id="forgot-password">Forgot Password?</a></div>
+      </form>
+      <div class="divider" style="display:flex;gap:10px;align-items:center;margin:14px 0;color:var(--gray)"><span style="flex:1;border-top:1px solid var(--light-gray)"></span>or<span style="flex:1;border-top:1px solid var(--light-gray)"></span></div>
+      <button class="btn-outline btn-sm" id="google-signin-btn"><i class="fab fa-google" style="color:#dd4b39"></i> Sign in with Google</button>
+      <div class="form-footer" style="margin-top: 12px;color:var(--gray)">Don't have an account? <a href="#" id="switch-to-signup">Create Account</a></div>
+    </div>
+
+    <div class="login-container" id="signup-container" style="display:none">
+      <div class="app-logo"><i class="fas fa-pills"></i><h1>RxAlert</h1></div>
+      <p class="app-tagline" style="color:var(--gray)">Create your account to get started</p>
+      <div class="form-toggle"><button id="back-to-login" class="form-toggle-btn">Login</button><button class="form-toggle-btn active">Create Account</button></div>
+      <form id="signup-form">
+        <div class="form-group"><label>Full Name</label><input id="signup-name" class="form-control" required></div>
+        <div class="form-group"><label>Email Address</label><input id="signup-email" type="email" class="form-control" required></div>
+        <div class="form-group"><label>Password</label><div class="password-container"><input id="signup-password" type="password" class="form-control" required><button class="password-toggle" id="signup-password-toggle" type="button"><i class="fas fa-eye"></i></button></div></div>
+        <div class="form-group"><label>Confirm Password</label><input id="signup-confirm" type="password" class="form-control" required></div>
+        <div class="form-group"><label>Medical Facility</label><input id="facility-name" class="form-control" required></div>
+        <button class="btn-primary btn-sm"><i class="fas fa-user-plus"></i> Create Account</button>
+        <div class="form-footer" style="margin-top: 10px">Already have an account? <a href="#" id="switch-to-login">Login</a></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Page 2: Dashboard -->
+  <div id="dashboard-page" class="page">
+    <div class="header">
+      <div class="logo"><i class="fas fa-pills"></i><h1>RxAlert</h1></div>
+      <div class="user-info">
+        <div class="user-details">
+          <div id="dashboard-user-name" class="user-name">Pharmacy Manager</div>
+          <div id="dashboard-user-facility" class="user-role">Administrator</div>
+        </div>
+        <div id="user-avatar" class="user-avatar">PM</div>
+        <button id="logout-btn" class="btn-outline btn-sm"><i class="fas fa-sign-out-alt"></i> Logout</button>
+      </div>
+    </div>
+
+    <div class="main-container">
+      <div class="sidebar">
+        <ul class="nav-links">
+          <li class="nav-item active" data-page="dashboard"><i class="fas fa-home"></i><span>Dashboard</span></li>
+          <li class="nav-item" data-page="inventory"><i class="fas fa-capsules"></i><span>Inventory</span></li>
+          <li class="nav-item" data-page="reports"><i class="fas fa-chart-bar"></i><span>Reports</span></li>
+          <li class="nav-item" data-page="about"><i class="fas fa-info-circle"></i><span>About</span></li>
+        </ul>
+      </div>
+
+      <div class="content">
+        <div class="page-header">
+          <h2 class="page-title">Dashboard Overview</h2>
+          <div class="page-actions">
+            <button id="refresh-dashboard-btn" class="btn-outline btn-sm"><i class="fas fa-sync"></i> Refresh</button>
+            <button id="add-medicine-btn" class="btn-primary btn-sm"><i class="fas fa-plus"></i> Add Medicine</button>
+          </div>
+        </div>
+
+        <div class="dashboard-cards">
+          <div class="card"><div class="card-header"><div class="card-title">Total Medicines</div><div class="card-icon"><i class="fas fa-pills"></i></div></div><div id="total-medicines" class="card-value">0</div><div class="card-footer">Across all categories</div></div>
+          <div class="card warning clickable" id="card-expiring"><div class="card-header"><div class="card-title">Expiring Soon</div><div class="card-icon"><i class="fas fa-exclamation-triangle"></i></div></div><div id="expiring-soon" class="card-value">0</div><div class="card-footer">Expiring within 3 months</div></div>
+          <div class="card danger clickable" id="card-expired"><div class="card-header"><div class="card-title">Expired Medicines</div><div class="card-icon"><i class="fas fa-skull-crossbones"></i></div></div><div id="expired-medicines" class="card-value">0</div><div class="card-footer">Needs immediate action</div></div>
+          <div class="card clickable" id="low-stock-card"><div class="card-header"><div class="card-title">Low Stock</div><div class="card-icon"><i class="fas fa-box-open"></i></div></div><div id="low-stock" class="card-value">0</div><div class="card-footer">Needs reordering</div></div>
+        </div>
+
+        <div class="table-container">
+          <div class="table-header"><div class="table-title">Recent Alerts</div><div class="table-actions"><button id="refresh-alerts-btn" class="btn-outline btn-sm"><i class="fas fa-sync"></i> Refresh</button></div></div>
+          <div class="table-responsive">
+            <table id="alerts-table"><thead><tr><th>Alert</th><th>Medicine</th><th>Days Left</th><th>Created</th></tr></thead><tbody></tbody></table>
+          </div>
+        </div>
+
+        <div class="table-container" id="low-stock-table" style="display:none">
+          <div class="table-header"><div class="table-title">Medicines Needing Reordering</div><div class="table-actions"><button id="back-to-dashboard" class="btn-outline btn-sm"><i class="fas fa-arrow-left"></i> Back to Dashboard</button><button id="print-lowstock-btn" class="btn-outline btn-sm"><i class="fas fa-print"></i> Print</button><button id="export-lowstock-btn" class="btn-primary btn-sm"><i class="fas fa-file-excel"></i> Export</button></div></div>
+          <div class="table-responsive">
+            <table id="low-stock-medicines-table"><thead><tr><th>Medicine Name</th><th>Generic Name</th><th>Current Stock</th><th>Minimum Required</th><th>Status</th><th>Last Ordered</th><th>Actions</th></tr></thead><tbody></tbody></table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Page 3: Inventory -->
+  <div id="inventory-page" class="page">
+    <div class="header">
+      <div class="logo"><i class="fas fa-pills"></i><h1>RxAlert</h1></div>
+      <div class="user-info">
+        <div class="user-details"><div id="inventory-user-name" class="user-name">Pharmacy Manager</div><div class="user-role">Administrator</div></div>
+        <div id="inventory-avatar" class="user-avatar">PM</div>
+        <button id="inventory-logout-btn" class="btn-outline btn-sm"><i class="fas fa-sign-out-alt"></i> Logout</button>
+      </div>
+    </div>
+    <div class="main-container">
+      <div class="sidebar">
+        <ul class="nav-links">
+          <li class="nav-item" data-page="dashboard"><i class="fas fa-home"></i><span>Dashboard</span></li>
+          <li class="nav-item active" data-page="inventory"><i class="fas fa-capsules"></i><span>Inventory</span></li>
+          <li class="nav-item" data-page="reports"><i class="fas fa-chart-bar"></i><span>Reports</span></li>
+          <li class="nav-item" data-page="about"><i class="fas fa-info-circle"></i><span>About</span></li>
+        </ul>
+      </div>
+      <div class="content">
+        <div class="page-header">
+          <h2 class="page-title">Medicine Inventory Management</h2>
+          <div class="page-actions"><button id="toggle-form-btn" class="btn-outline btn-sm"><i class="fas fa-plus"></i> Add Medicine</button><button id="export-btn" class="btn-primary btn-sm"><i class="fas a-file-excel"></i> Export</button></div>
+        </div>
+
+        <div id="add-medicine-form" class="form-container" style="display:none">
+          <h3 class="form-title">Add New Medicine</h3>
+          <form id="medicine-form">
+            <div class="form-grid">
+              <div class="form-group"><label>Medicine Name</label><input id="medicineName" class="form-control" required></div>
+              <div class="form-group"><label>Generic Name</label><input id="genericName" class="form-control" required></div>
+              <div class="form-group"><label>Category</label>
+                <select id="category" class="form-control" required>
+                  <option value="">Select Category</option><option>Analgesics</option><option>Antibiotics</option><option>Antivirals</option><option>Vitamins</option><option>Antidiabetics</option><option>Cardiovascular</option><option>Other</option>
+                </select>
+              </div>
+              <div class="form-group"><label>Batch Number</label><input id="batchNo" class="form-control" required></div>
+              <div class="form-group"><label>Quantity Received</label><input id="quantity" type="number" class="form-control" min="1" required></div>
+              <div class="form-group"><label>Unit Price (₱)</label><input id="unitPrice" type="number" step="0.01" min="0" class="form-control" required></div>
+              <div class="form-group"><label>Expiration Date</label><input id="expDate" type="date" class="form-control" required></div>
+              <div class="form-group"><label>Purchased From</label><input id="supplier" class="form-control" required></div>
+              <div class="form-group"><label>Purchase Order No.</label><input id="poNumber" class="form-control" required></div>
+              <div class="form-group"><label>Delivery Invoice No.</label><input id="invoiceNo" class="form-control" required></div>
+              <div class="form-group"><label>Date Received</label><input id="dateReceived" type="date" class="form-control" required></div>
+            </div>
+            <div style="display:flex;gap:10px;margin-top:10px">
+              <button id="cancel-form-btn" type="reset" class="btn-outline btn-sm"><i class="fas fa-times"></i> Cancel</button>
+              <button class="btn-primary btn-sm" type="submit"><i class="fas fa-plus"></i> Add Medicine</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="table-container">
+          <div class="table-header"><div class="table-title">Medicine Information</div><div class="table-actions"><button id="refresh-inventory-btn" class="btn-outline btn-sm"><i class="fas fa-sync"></i> Refresh</button></div></div>
+          <div class="table-responsive">
+            <table id="inventory-table"><thead><tr><th>Medicine Name</th><th>Generic Name</th><th>Category</th><th>Batch No.</th><th>Expiration Date</th><th>Quantity</th><th>Supplier</th><th>Unit Price</th><th>Status</th><th>Actions</th></tr></thead><tbody></tbody></table>
+          </div>
+        </div>
+
+        <div class="table-container">
+          <div class="table-header"><div class="table-title">Purchase Information</div><div class="table-actions"><button id="refresh-purchase-btn" class="btn-outline btn-sm"><i class="fas fa-sync"></i> Refresh</button></div></div>
+          <div class="table-responsive">
+            <table id="purchase-table"><thead><tr><th>Medicine Name</th><th>Purchased From</th><th>Purchase Order No.</th><th>Delivery Invoice No.</th><th>Quantity Received</th><th>Unit Price (₱)</th><th>Date Received</th><th>Actions</th></tr></thead><tbody></tbody></table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Page 4: Reports -->
+  <div id="reports-page" class="page">
+    <div class="header">
+      <div class="logo"><i class="fas fa-pills"></i><h1>RxAlert</h1></div>
+      <div class="user-info">
+        <div class="user-details"><div id="reports-user-name" class="user-name">Pharmacy Manager</div><div class="user-role">Administrator</div></div>
+        <div id="reports-avatar" class="user-avatar">PM</div>
+        <button id="reports-logout-btn" class="btn-outline btn-sm"><i class="fas fa-sign-out-alt"></i> Logout</button>
+      </div>
+    </div>
+    <div class="main-container">
+      <div class="sidebar">
+        <ul class="nav-links">
+          <li class="nav-item" data-page="dashboard"><i class="fas fa-home"></i><span>Dashboard</span></li>
+          <li class="nav-item" data-page="inventory"><i class="fas fa-capsules"></i><span>Inventory</span></li>
+          <li class="nav-item active" data-page="reports"><i class="fas fa-chart-bar"></i><span>Reports</span></li>
+          <li class="nav-item" data-page="about"><i class="fas fa-info-circle"></i><span>About</span></li>
+        </ul>
+      </div>
+      <div class="content">
+        <div class="page-header">
+          <h2 class="page-title">Reports & Analytics</h2>
+          <div class="page-actions"><button id="print-reports-btn" class="btn-outline btn-sm"><i class="fas fa-print"></i> Print</button><button id="export-reports-btn" class="btn-primary btn-sm"><i class="fas fa-file-excel"></i> Export</button></div>
+        </div>
+
+        <div class="filters-container">
+          <h3 class="filters-title" style="margin:0 0 8px">Report Filters</h3>
+          <div class="form-grid" style="grid-template-columns:repeat(auto-fill,minmax(200px,1fr))">
+            <div><label>Date From</label><input type="date" id="date-from" class="form-control"></div>
+            <div><label>Date To</label><input type="date" id="date-to" class="form-control"></div>
+            <div><label>Medicine Category</label>
+              <select id="category-filter" class="form-control"><option value="">All Categories</option><option>Analgesics</option><option>Antibiotics</option><option>Antivirals</option><option>Vitamins</option><option>Antidiabetics</option><option>Cardiovascular</option><option>Other</option></select>
+            </div>
+            <div><label>Status</label>
+              <select id="status-filter" class="form-control"><option value="">All Status</option><option value="active">Active</option><option value="expiring">Expiring Soon</option><option value="expired">Expired</option><option value="low-stock">Low Stock</option></select>
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:10px">
+            <button id="apply-filters-btn" class="btn-primary btn-sm"><i class="fas fa-filter"></i> Apply Filters</button>
+            <button id="reset-filters-btn" class="btn-outline btn-sm"><i class="fas fa-redo"></i> Reset Filters</button>
+          </div>
+        </div>
+
+        <div class="dashboard-cards reports-cards">
+          <div class="card"><div class="card-header"><div class="card-title">Total Inventory Value</div><div class="card-icon"><i class="fas fa-money-bill-wave"></i></div></div><div id="total-inventory-value" class="card-value">₱0.00</div><div class="card-footer">Current stock value</div></div>
+          <div class="card success clickable" id="active-medicines-card"><div class="card-header"><div class="card-title">Active Medicines</div><div class="card-icon"><i class="fas fa-capsules"></i></div></div><div id="active-medicines" class="card-value">0</div><div class="card-footer">Good condition medicines</div></div>
+          <div class="card info clickable" id="total-suppliers-card"><div class="card-header"><div class="card-title">Total Suppliers</div><div class="card-icon"><i class="fas fa-truck"></i></div></div><div id="total-suppliers" class="card-value">0</div><div class="card-footer">Registered suppliers</div></div>
+          <div class="card warning clickable" id="expiring-quarter-card"><div class="card-header"><div class="card-title">Expiring This Quarter</div><div class="card-icon"><i class="fas fa-calendar-alt"></i></div></div><div id="expiring-quarter" class="card-value">0</div><div class="card-footer">Within 90 days</div></div>
+        </div>
+
+        <div class="charts-container">
+          <div class="chart-card"><h3 style="margin:0 0 8px">Expiry Status Distribution</h3><div class="chart-wrapper"><canvas id="expiryChart"></canvas></div></div>
+          <div class="chart-card"><h3 style="margin:0 0 8px">Inventory Value by Category</h3><div class="chart-wrapper"><canvas id="valueChart"></canvas></div></div>
+        </div>
+
+        <div class="table-container">
+          <div class="table-header"><div class="table-title">Expiry Report</div><div class="table-actions"><button id="refresh-reports-btn" class="btn-outline btn-sm"><i class="fas fa-sync"></i> Refresh</button></div></div>
+          <div class="table-responsive"><table id="expiry-report-table"><thead><tr><th>Medicine Name</th><th>Generic Name</th><th>Batch No.</th><th>Expiration Date</th><th>Days Left</th><th>Quantity</th><th>Unit Price (₱)</th><th>Total Value (₱)</th><th>Status</th></tr></thead><tbody></tbody></table></div>
+        </div>
+
+        <!-- Active Medicines table -->
+        <div class="table-container" id="active-meds-table" style="display:none">
+          <div class="table-header"><div class="table-title">Active Medicines (Good Condition)</div><div class="page-actions"><button id="back-to-reports-active" class="btn-outline btn-sm"><i class="fas fa-arrow-left"></i> Back</button><button id="print-active-btn" class="btn-outline btn-sm"><i class="fas fa-print"></i> Print</button><button id="export-active-btn" class="btn-primary btn-sm"><i class="fas fa-file-excel"></i> Export</button></div></div>
+          <div class="table-responsive"><table id="active-meds-info-table"><thead><tr><th>Medicine Name</th><th>Generic Name</th><th>Category</th><th>Batch No.</th><th>Expiration Date</th><th>Days Left</th><th>Quantity</th><th>Status</th></tr></thead><tbody></tbody></table></div>
+        </div>
+
+        <div class="table-container" id="suppliers-table" style="display:none">
+          <div class="table-header"><div class="table-title">Suppliers Information</div><div class="page-actions"><button id="back-to-reports" class="btn-outline btn-sm"><i class="fas fa-arrow-left"></i> Back</button><button id="print-suppliers-btn" class="btn-outline btn-sm"><i class="fas fa-print"></i> Print</button><button id="export-suppliers-btn" class="btn-primary btn-sm"><i class="fas fa-file-excel"></i> Export</button></div></div>
+          <div class="table-responsive"><table id="suppliers-info-table"><thead><tr><th>Supplier Name</th><th>Contact No.</th><th>Email</th><th>Address</th><th>Status</th><th>Actions</th></tr></thead><tbody></tbody></table></div>
+        </div>
+
+        <div class="table-container" id="expiring-quarter-table" style="display:none">
+          <div class="table-header"><div class="table-title">Medicines Expiring This Quarter (Within 90 Days)</div><div class="page-actions"><button id="back-to-reports2" class="btn-outline btn-sm"><i class="fas fa-arrow-left"></i> Back</button><button id="print-expiring-btn" class="btn-outline btn-sm"><i class="fas fa-print"></i> Print</button><button id="export-expiring-btn" class="btn-primary btn-sm"><i class="fas fa-file-excel"></i> Export</button></div></div>
+          <div class="table-responsive"><table id="expiring-quarter-info-table"><thead><tr><th>Medicine Name</th><th>Generic Name</th><th>Batch No.</th><th>Expiration Date</th><th>Days Left</th><th>Quantity</th><th>Status</th><th>Actions</th></tr></thead><tbody></tbody></table></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Page 5: About -->
+  <div id="about-page" class="page">
+    <div class="header">
+      <div class="logo"><i class="fas fa-pills"></i><h1>RxAlert</h1></div>
+      <div class="user-info">
+        <div class="user-details"><div id="about-user-name" class="user-name">Pharmacy Manager</div><div class="user-role">Administrator</div></div>
+        <div id="about-avatar" class="user-avatar">PM</div>
+        <button id="about-logout-btn" class="btn-outline btn-sm"><i class="fas fa-sign-out-alt"></i> Logout</button>
+      </div>
+    </div>
+    <div class="main-container">
+      <div class="sidebar">
+        <ul class="nav-links">
+          <li class="nav-item" data-page="dashboard"><i class="fas fa-home"></i><span>Dashboard</span></li>
+          <li class="nav-item" data-page="inventory"><i class="fas fa-capsules"></i><span>Inventory</span></li>
+          <li class="nav-item" data-page="reports"><i class="fas fa-chart-bar"></i><span>Reports</span></li>
+          <li class="nav-item active" data-page="about"><i class="fas fa-info-circle"></i><span>About</span></li>
+        </ul>
+      </div>
+      <div class="content">
+        <div class="page-header">
+          <h2 class="page-title">About RxAlert</h2>
+          <div class="page-actions"><button id="about-contact-btn" class="btn-outline btn-sm"><i class="fas fa-envelope"></i> Contact Us</button></div>
+        </div>
+        <div class="form-container">
+          <h3 style="margin-top:0;color:var(--primary)">What is RxAlert?</h3>
+          <p>RxAlert helps you track medicine stock, monitor expirations, and analyze inventory. Real-time alerts + low-stock reminders keep you on top of your pharmacy operations.</p>
+          <h3 style="color:var(--primary)">Contact Information</h3>
+          <p>Email: support@rxalert.com • Phone: +1 (555) 123-4567</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+// ===== Sample Data =====
+let medicines = [
+  {id:1,name:"Paracetamol 500mg",genericName:"Acetaminophen",category:"Analgesics",batchNo:"PC2023001",expDate:"2026-12-15",quantity:150,supplier:"MediCorp Pharmaceuticals",unitPrice:5.50,poNumber:"PO-2023-001",invoiceNo:"INV-2023-001",dateReceived:"2025-01-15"},
+  {id:2,name:"Amoxicillin 250mg",genericName:"Amoxicillin",category:"Antibiotics",batchNo:"AM2023002",expDate:"2026-06-30",quantity:8,supplier:"PharmaPlus Distributors",unitPrice:8.75,poNumber:"PO-2023-002",invoiceNo:"INV-2023-002",dateReceived:"2025-02-10"},
+  {id:3,name:"Ibuprofen 400mg",genericName:"Ibuprofen",category:"Analgesics",batchNo:"IB2023003",expDate:"2025-11-20",quantity:45,supplier:"HealthFirst Supplies",unitPrice:6.25,poNumber:"PO-2023-003",invoiceNo:"INV-2023-003",dateReceived:"2025-03-05"},
+  {id:4,name:"Vitamin C 1000mg",genericName:"Ascorbic Acid",category:"Vitamins",batchNo:"VC2023004",expDate:"2026-03-15",quantity:200,supplier:"NutriHealth Inc.",unitPrice:12.50,poNumber:"PO-2023-004",invoiceNo:"INV-2023-004",dateReceived:"2025-04-20"},
+  {id:5,name:"Metformin 500mg",genericName:"Metformin Hydrochloride",category:"Antidiabetics",batchNo:"MF2023005",expDate:"2026-08-10",quantity:120,supplier:"Diabeto Pharma",unitPrice:4.80,poNumber:"PO-2023-005",invoiceNo:"INV-2023-005",dateReceived:"2025-05-12"}
+];
+let suppliers = [
+  {id:1,name:"MediCorp Pharmaceuticals",contactNo:"+63 912 345 6789",email:"contact@medicorp.com",address:"123 Medical Ave, Manila",status:"Active"},
+  {id:2,name:"PharmaPlus Distributors",contactNo:"+63 917 654 3210",email:"info@pharmaplus.com",address:"456 Pharma St, Quezon City",status:"Active"},
+  {id:3,name:"HealthFirst Supplies",contactNo:"+63 918 111 2222",email:"sales@healthfirst.com",address:"789 Health Rd, Makati",status:"Active"},
+  {id:4,name:"NutriHealth Inc.",contactNo:"+63 919 333 4444",email:"support@nutrihealth.com",address:"321 Wellness Blvd, Taguig",status:"Active"},
+  {id:5,name:"Diabeto Pharma",contactNo:"+63 920 555 6666",email:"orders@diabeto.com",address:"654 Diabetes Lane, Pasig",status:"Active"}
+];
+
+// ===== Elements =====
+const pages = {
+  login: document.getElementById('login-page'),
+  dashboard: document.getElementById('dashboard-page'),
+  inventory: document.getElementById('inventory-page'),
+  reports: document.getElementById('reports-page'),
+  about: document.getElementById('about-page'),
+};
+const navGroups = document.querySelectorAll('.sidebar .nav-links');
+const alertsTable = document.querySelector('#alerts-table tbody');
+const lowStockTable = document.getElementById('low-stock-table');
+const lowStockTableBody = document.querySelector('#low-stock-medicines-table tbody');
+const backToDashboard = document.getElementById('back-to-dashboard');
+
+// Login bits
+const loginToggle = document.getElementById('login-toggle');
+const signupToggle = document.getElementById('signup-toggle');
+const switchToSignup = document.getElementById('switch-to-signup');
+const backToLogin = document.getElementById('back-to-login');
+const loginForm = document.getElementById('login-form');
+const signupForm = document.getElementById('signup-form');
+const loginContainer = document.getElementById('login-container');
+const signupContainer = document.getElementById('signup-container');
+const forgotPassword = document.getElementById('forgot-password');
+const forgotPasswordModal = document.getElementById('forgot-password-modal');
+const sendVerificationBtn = document.getElementById('send-verification-btn');
+const resetPasswordBtn = document.getElementById('reset-password-btn');
+
+// Reports elements
+const totalInventoryValueEl = document.getElementById('total-inventory-value');
+const activeMedicinesEl = document.getElementById('active-medicines');
+const totalSuppliersEl = document.getElementById('total-suppliers');
+const expiringQuarterEl = document.getElementById('expiring-quarter');
+const expiryReportTable = document.querySelector('#expiry-report-table tbody');
+const totalSuppliersCard = document.getElementById('total-suppliers-card');
+const expiringQuarterCard = document.getElementById('expiring-quarter-card');
+const suppliersTable = document.getElementById('suppliers-table');
+const suppliersInfoTable = document.querySelector('#suppliers-info-table tbody');
+const expiringQuarterTable = document.getElementById('expiring-quarter-table');
+const expiringQuarterInfoTable = document.querySelector('#expiring-quarter-info-table tbody');
+const activeMedsTable = document.getElementById('active-meds-table');
+const activeMedsInfoTable = document.querySelector('#active-meds-info-table tbody');
+const activeMedsCard = document.getElementById('active-medicines-card');
+
+// Dashboard cards
+const totalMedicinesEl = document.getElementById('total-medicines');
+const expiringSoonEl = document.getElementById('expiring-soon');
+const expiredMedicinesEl = document.getElementById('expired-medicines');
+const lowStockEl = document.getElementById('low-stock');
+const lowStockCard = document.getElementById('low-stock-card');
+
+// Supplier modal
+const editSupplierModal = document.getElementById('edit-supplier-modal');
+
+// ===== Utils =====
+function toast(msg, type='success'){
+  const el = document.createElement('div');
+  el.className = `toast toast-${type}`;
+  el.textContent = msg;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(()=>el.remove(),2500);
+}
+function daysUntil(date){ const d = Math.ceil((new Date(date)-new Date())/(1000*60*60*24)); return d; }
+function expiryStatus(expDate){
+  const d = daysUntil(expDate);
+  if(d < 0) return {class:'expired', badge:'status-danger', text:'Expired'};
+  if(d <= 90) return {class:'expiring-soon', badge:'status-warning', text:'Expiring Soon'};
+  return {class:'', badge:'status-active', text:'Good'};
+}
+function stockStatus(qty){ return qty<=10 ? {class:'low-stock',badge:'status-warning',text:'Low Stock'} : {class:'',badge:'status-active',text:'In Stock'}; }
+function openModal(m){ m.style.display='block' } function closeModal(m){ m.style.display='none' }
+document.querySelectorAll('.close-modal').forEach(b=>b.addEventListener('click',e=>closeModal(e.target.closest('.modal'))));
+
+// ===== Login / Signup flow (mock) =====
+loginToggle.onclick = ()=>{ loginToggle.classList.add('active'); signupToggle.classList.remove('active'); loginContainer.style.display='block'; signupContainer.style.display='none'; };
+signupToggle.onclick = ()=>{ signupToggle.classList.add('active'); loginToggle.classList.remove('active'); loginContainer.style.display='none'; signupContainer.style.display='block'; };
+switchToSignup.onclick = (e)=>{ e.preventDefault(); signupToggle.click(); };
+document.getElementById('switch-to-login')?.addEventListener('click',(e)=>{ e.preventDefault(); loginToggle.click(); });
+backToLogin.onclick = ()=> loginToggle.click();
+
+loginForm.addEventListener('submit', (e)=>{
+  e.preventDefault();
+  const email = document.getElementById('login-email').value.trim();
+  const name = email.split('@')[0] || 'User';
+  ['dashboard','inventory','reports','about'].forEach(p=>{
+    const u = document.getElementById(p+'-user-name'); if(u) u.textContent = name;
+    const av = document.getElementById(p==='dashboard'?'user-avatar':p+'-avatar'); if(av) av.textContent = name.substring(0,2).toUpperCase();
+  });
+  showPage('dashboard'); toast('Logged in successfully');
+  renderAll();
+});
+
+signupForm.addEventListener('submit',(e)=>{e.preventDefault(); toast('Account created! You can log in now.'); loginToggle.click();});
+
+document.getElementById('login-password-toggle').onclick = ()=>{
+  const i = document.getElementById('login-password'); i.type = i.type==='password'?'text':'password';
+};
+document.getElementById('signup-password-toggle').onclick = ()=>{
+  const i = document.getElementById('signup-password'); i.type = i.type==='password'?'text':'password';
+};
+
+forgotPassword.onclick = (e)=>{ e.preventDefault(); openModal(forgotPasswordModal); };
+sendVerificationBtn.onclick = ()=>{ document.getElementById('forgot-password-step1').style.display='none'; document.getElementById('forgot-password-step2').style.display='block'; toast('Verification code sent to your email.'); };
+resetPasswordBtn.onclick = ()=>{ closeModal(forgotPasswordModal); toast('Password reset successful'); };
+
+// ===== Navigation =====
+function showPage(which){
+  Object.entries(pages).forEach(([k,el])=>{ el.classList.toggle('active', k===which); });
+  navGroups.forEach(list=>{
+    list.querySelectorAll('.nav-item').forEach(item=>item.classList.toggle('active', item.dataset.page===which));
+  });
+}
+document.querySelectorAll('.nav-item').forEach(item=>{
+  item.addEventListener('click', ()=> showPage(item.dataset.page));
+});
+['logout-btn','inventory-logout-btn','reports-logout-btn','about-logout-btn'].forEach(id=>{
+  const b=document.getElementById(id); if(b) b.onclick=()=>{ showPage('login'); toast('Logged out','warning'); };
+});
+
+// ===== Dashboard =====
+document.getElementById('refresh-dashboard-btn').onclick = ()=>{ updateDashboard(); toast('Dashboard refreshed'); };
+document.getElementById('add-medicine-btn').onclick = ()=>{ showPage('inventory'); document.getElementById('add-medicine-form').style.display='block'; };
+
+document.getElementById('refresh-alerts-btn').onclick = ()=>{ updateAlertsTable(); toast('Alerts refreshed'); };
+
+function updateDashboard(){
+  totalMedicinesEl.textContent = medicines.length;
+  let expiringSoon=0, expired=0, low=0;
+  medicines.forEach(m=>{
+    const d = daysUntil(m.expDate);
+    if(d<0) expired++; else if(d<=90) expiringSoon++;
+    if(m.quantity<=10) low++;
+  });
+  expiringSoonEl.textContent = expiringSoon;
+  expiredMedicinesEl.textContent = expired;
+  lowStockEl.textContent = low;
+  updateAlertsTable();
+}
+
+function updateAlertsTable(){
+  alertsTable.innerHTML = '';
+  const sorted = [...medicines].sort((a,b)=> new Date(a.expDate)-new Date(b.expDate));
+  sorted.forEach(m=>{
+    const d = daysUntil(m.expDate);
+    if(d<=90){
+      const tr = document.createElement('tr');
+      const status = d<0 ? {t:'Medicine Expired',badge:'status-danger'} : {t:'Expiry Approaching',badge:'status-warning'};
+      tr.innerHTML = `<td><span class="status-badge ${status.badge}">${status.t}</span></td><td>${m.name}</td><td>${d}</td><td>${new Date().toLocaleDateString()}</td>`;
+      alertsTable.appendChild(tr);
+    }
+  });
+}
+
+lowStockCard.onclick = ()=>{
+  document.getElementById('low-stock-table').style.display='block';
+  document.querySelector('.dashboard-cards').style.display='none';
+  document.querySelector('#alerts-table').closest('.table-container').style.display='none';
+  updateLowStockTable();
+};
+document.getElementById('print-lowstock-btn').onclick = ()=> printTable('low-stock-medicines-table');
+document.getElementById('export-lowstock-btn').onclick = ()=>{
+  const data = collectTable('low-stock-medicines-table');
+  exportToExcel(data,'low-stock.xlsx'); toast('Low stock exported');
+};
+backToDashboard.onclick = ()=>{
+  lowStockTable.style.display='none';
+  document.querySelector('.dashboard-cards').style.display='grid';
+  document.querySelector('#alerts-table').closest('.table-container').style.display='block';
+};
+
+function updateLowStockTable(){
+  lowStockTableBody.innerHTML = '';
+  const items = medicines.filter(m=>m.quantity<=10);
+  if(items.length===0){
+    const tr=document.createElement('tr'); tr.innerHTML = `<td colspan="7" style="text-align:center;color:var(--gray)">No low stock medicines 🎉</td>`;
+    lowStockTableBody.appendChild(tr); return;
+  }
+  items.forEach(m=>{
+    const s = stockStatus(m.quantity);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${m.name}</td><td>${m.genericName}</td><td>${m.quantity}</td><td>10</td><td><span class="status-badge ${s.badge}">${s.text}</span></td><td>${m.dateReceived}</td><td><button class="action-btn" title="Reorder"><i class="fas fa-shopping-cart"></i></button></td>`;
+    lowStockTableBody.appendChild(tr);
+  });
+}
+
+// ===== Inventory =====
+const inventoryTableBody = document.querySelector('#inventory-table tbody');
+const purchaseTableBody = document.querySelector('#purchase-table tbody');
+document.getElementById('toggle-form-btn').onclick = ()=> document.getElementById('add-medicine-form').style.display='block';
+document.getElementById('cancel-form-btn').onclick = ()=> document.getElementById('add-medicine-form').style.display='none';
+document.getElementById('refresh-inventory-btn').onclick = ()=> updateInventoryPage();
+document.getElementById('refresh-purchase-btn').onclick = ()=> updateInventoryPage();
+document.getElementById('export-btn').onclick = ()=> exportToExcel(medicines,'inventory.xlsx');
+
+document.getElementById('medicine-form').addEventListener('submit',(e)=>{
+  e.preventDefault();
+  const newMed = {
+    id: Date.now(),
+    name: document.getElementById('medicineName').value,
+    genericName: document.getElementById('genericName').value,
+    category: document.getElementById('category').value,
+    batchNo: document.getElementById('batchNo').value,
+    quantity: parseInt(document.getElementById('quantity').value||'0',10),
+    unitPrice: parseFloat(document.getElementById('unitPrice').value||'0'),
+    expDate: document.getElementById('expDate').value,
+    supplier: document.getElementById('supplier').value,
+    poNumber: document.getElementById('poNumber').value,
+    invoiceNo: document.getElementById('invoiceNo').value,
+    dateReceived: document.getElementById('dateReceived').value
+  };
+  medicines.push(newMed);
+  toast('Medicine added');
+  e.target.reset(); document.getElementById('add-medicine-form').style.display='none';
+  renderAll();
+});
+
+function updateInventoryPage(){
+  // inventory
+  inventoryTableBody.innerHTML = '';
+  medicines.forEach(m=>{
+    const exp = expiryStatus(m.expDate);
+    const tr = document.createElement('tr');
+    tr.className = `${exp.class}`;
+    tr.innerHTML = `<td>${m.name}</td><td>${m.genericName}</td><td>${m.category}</td><td>${m.batchNo}</td><td>${new Date(m.expDate).toLocaleDateString()}</td><td>${m.quantity}</td><td>${m.supplier}</td><td>₱${m.unitPrice.toFixed(2)}</td><td><span class="status-badge ${exp.badge}">${exp.text}</span></td><td><button class="action-btn edit-medicine-btn" data-id="${m.id}" title="Edit"><i class="fas fa-edit"></i></button><button class="action-btn" title="Delete" data-del="${m.id}"><i class="fas fa-trash"></i></button></td>`;
+    inventoryTableBody.appendChild(tr);
+  });
+  // bind edits
+  document.querySelectorAll('.edit-medicine-btn').forEach(btn=>btn.onclick = ()=>{
+    const id = +btn.dataset.id; const m = medicines.find(x=>x.id===id); if(!m) return;
+    document.getElementById('edit-medicineName').value = m.name;
+    document.getElementById('edit-genericName').value = m.genericName;
+    document.getElementById('edit-category').value = m.category;
+    document.getElementById('edit-batchNo').value = m.batchNo;
+    document.getElementById('edit-quantity').value = m.quantity;
+    document.getElementById('edit-unitPrice').value = m.unitPrice;
+    document.getElementById('edit-expDate').value = m.expDate;
+    document.getElementById('edit-supplier').value = m.supplier;
+    document.getElementById('edit-medicine-form').dataset.id = id;
+    openModal(document.getElementById('edit-medicine-modal'));
+  });
+  document.querySelectorAll('[data-del]').forEach(btn=>btn.onclick=()=>{
+    const id=+btn.getAttribute('data-del'); medicines = medicines.filter(m=>m.id!==id); toast('Deleted','warning'); renderAll();
+  });
+  // purchases
+  purchaseTableBody.innerHTML='';
+  medicines.forEach(m=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML = `<td>${m.name}</td><td>${m.supplier}</td><td>${m.poNumber}</td><td>${m.invoiceNo}</td><td>${m.quantity}</td><td>₱${m.unitPrice.toFixed(2)}</td><td>${m.dateReceived}</td><td><button class="action-btn edit-purchase-btn" data-id="${m.id}" title="Edit"><i class="fas fa-edit"></i></button></td>`;
+    purchaseTableBody.appendChild(tr);
+  });
+  document.querySelectorAll('.edit-purchase-btn').forEach(btn=>btn.onclick=()=>{
+    const id = +btn.dataset.id; const m = medicines.find(x=>x.id===id); if(!m) return;
+    document.getElementById('edit-purchase-medicineName').value = m.name;
+    document.getElementById('edit-purchase-supplier').value = m.supplier;
+    document.getElementById('edit-poNumber').value = m.poNumber;
+    document.getElementById('edit-invoiceNo').value = m.invoiceNo;
+    document.getElementById('edit-purchase-quantity').value = m.quantity;
+    document.getElementById('edit-purchase-unitPrice').value = m.unitPrice;
+    document.getElementById('edit-dateReceived').value = m.dateReceived;
+    document.getElementById('edit-purchase-form').dataset.id = id;
+    openModal(document.getElementById('edit-purchase-modal'));
+  });
+}
+document.getElementById('edit-medicine-form').addEventListener('submit',(e)=>{
+  e.preventDefault();
+  const id = +e.target.dataset.id; const m = medicines.find(x=>x.id===id); if(!m) return;
+  m.name = document.getElementById('edit-medicineName').value;
+  m.genericName = document.getElementById('edit-genericName').value;
+  m.category = document.getElementById('edit-category').value;
+  m.quantity = +document.getElementById('edit-quantity').value;
+  m.unitPrice = +document.getElementById('edit-unitPrice').value;
+  m.expDate = document.getElementById('edit-expDate').value;
+  m.supplier = document.getElementById('edit-supplier').value;
+  closeModal(document.getElementById('edit-medicine-modal')); toast('Medicine updated'); renderAll();
+});
+document.getElementById('edit-purchase-form').addEventListener('submit',(e)=>{
+  e.preventDefault();
+  const id = +e.target.dataset.id; const m = medicines.find(x=>x.id===id); if(!m) return;
+  m.name = document.getElementById('edit-purchase-medicineName').value;
+  m.supplier = document.getElementById('edit-purchase-supplier').value;
+  m.poNumber = document.getElementById('edit-poNumber').value;
+  m.invoiceNo = document.getElementById('edit-invoiceNo').value;
+  m.quantity = +document.getElementById('edit-purchase-quantity').value;
+  m.unitPrice = +document.getElementById('edit-purchase-unitPrice').value;
+  m.dateReceived = document.getElementById('edit-dateReceived').value;
+  closeModal(document.getElementById('edit-purchase-modal')); toast('Purchase updated'); renderAll();
+});
+
+// ===== Export / Print =====
+function collectTable(tableId){
+  const table = document.getElementById(tableId);
+  const headers = Array.from(table.querySelectorAll('thead th')).map(th=>th.textContent.trim());
+  const rows = Array.from(table.querySelectorAll('tbody tr'));
+  return rows.map(tr=>{
+    const cells = Array.from(tr.children).map(td=>td.innerText);
+    const obj = {}; headers.forEach((h,i)=>obj[h]=cells[i]); return obj;
+  });
+}
+function exportToExcel(arr, filename){
+  const ws = XLSX.utils.json_to_sheet(arr);
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Sheet1'); XLSX.writeFile(wb, filename);
+}
+function printTable(tableId){
+  const html = document.getElementById(tableId).outerHTML;
+  const w=window.open('','','width=900,height=700'); w.document.write('<html><head><title>Print</title></head><body>'+html+'</body></html>'); w.document.close(); w.focus(); w.print(); w.close();
+}
+document.getElementById('export-reports-btn').onclick = ()=>{
+  const data = collectTable('expiry-report-table');
+  exportToExcel(data,'reports.xlsx'); toast('Reports exported');
+};
+document.getElementById('print-reports-btn').onclick = ()=> printTable('expiry-report-table');
+
+// ===== Reports =====
+let expiryChart, valueChart;
+function updateReports(filtered=null){
+  const meds = filtered || medicines;
+  // cards
+  totalSuppliersEl.textContent = suppliers.length;
+  let expiring=0, active=0, totalValue=0;
+  const byCat = {};
+  meds.forEach(m=>{
+    const status = daysUntil(m.expDate);
+    if(status>0) active++;
+    if(status>0 && status<=90) expiring++;
+    totalValue += m.quantity*m.unitPrice;
+    byCat[m.category] = (byCat[m.category]||0) + m.quantity*m.unitPrice;
+  });
+  totalInventoryValueEl.textContent = '₱'+totalValue.toFixed(2);
+  activeMedicinesEl.textContent = active;
+  expiringQuarterEl.textContent = expiring;
+
+  // expiry report table
+  expiryReportTable.innerHTML='';
+  meds.forEach(m=>{
+    const d = daysUntil(m.expDate); const ex = expiryStatus(m.expDate);
+    const tr=document.createElement('tr');
+    tr.innerHTML = `<td>${m.name}</td><td>${m.genericName}</td><td>${m.batchNo}</td><td>${new Date(m.expDate).toLocaleDateString()}</td><td>${d}</td><td>${m.quantity}</td><td>₱${m.unitPrice.toFixed(2)}</td><td>₱${(m.unitPrice*m.quantity).toFixed(2)}</td><td><span class="status-badge ${ex.badge}">${ex.text}</span></td>`;
+    expiryReportTable.appendChild(tr);
+  });
+
+  // charts
+  const expCounts = {Good:0,'Expiring Soon':0,Expired:0};
+  meds.forEach(m=>{ const t = expiryStatus(m.expDate).text; expCounts[t] = (expCounts[t]||0)+1; });
+  const ctx1 = document.getElementById('expiryChart').getContext('2d');
+  if(expiryChart) expiryChart.destroy();
+  expiryChart = new Chart(ctx1,{type:'pie',data:{labels:Object.keys(expCounts),datasets:[{data:Object.values(expCounts)}]},options:{responsive:true,plugins:{legend:{position:'bottom'}}}});
+
+  const ctx2 = document.getElementById('valueChart').getContext('2d');
+  if(valueChart) valueChart.destroy();
+  const labels = Object.keys(byCat), values = Object.values(byCat);
+  valueChart = new Chart(ctx2,{type:'bar',data:{labels,datasets:[{label:'₱ Value',data:values}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}});
+}
+
+// Filters
+function applyFilters(){
+  const df = document.getElementById('date-from').value ? new Date(document.getElementById('date-from').value) : null;
+  const dt = document.getElementById('date-to').value ? new Date(document.getElementById('date-to').value) : null;
+  const cat = document.getElementById('category-filter').value;
+  const status = document.getElementById('status-filter').value; // active | expiring | expired | low-stock
+
+  let filtered = medicines.filter(m=>{
+    let ok = true;
+    const ex = new Date(m.expDate);
+    if(df && ex < df) ok=false;
+    if(dt && ex > dt) ok=false;
+    if(cat && m.category!==cat) ok=false;
+    if(status){
+      const d = daysUntil(m.expDate);
+      if(status==='active' && !(d>90)) ok=false;
+      if(status==='expiring' && !(d>0 && d<=90)) ok=false;
+      if(status==='expired' && !(d<0)) ok=false;
+      if(status==='low-stock' && !(m.quantity<=10)) ok=false;
+    }
+    return ok;
+  });
+  updateReports(filtered);
+  toast('Filters applied');
+}
+document.getElementById('apply-filters-btn').onclick = applyFilters;
+document.getElementById('reset-filters-btn').onclick = ()=>{
+  document.getElementById('date-from').value='';
+  document.getElementById('date-to').value='';
+  document.getElementById('category-filter').value='';
+  document.getElementById('status-filter').value='';
+  updateReports(); toast('Filters reset');
+};
+document.getElementById('refresh-reports-btn').onclick = ()=>{ updateReports(); toast('Reports refreshed'); };
+
+// Active Medicines drilldown
+activeMedsCard.onclick = ()=>{
+  document.querySelector('.reports-cards').style.display='none';
+  document.querySelector('.charts-container').style.display='none';
+  document.querySelector('#expiry-report-table').closest('.table-container').style.display='none';
+  document.querySelector('.filters-container').style.display='none';
+  activeMedsTable.style.display='block';
+  activeMedsInfoTable.innerHTML='';
+  medicines.forEach(m=>{
+    const d = daysUntil(m.expDate);
+    if(d>90){
+      const tr=document.createElement('tr');
+      tr.innerHTML = `<td>${m.name}</td><td>${m.genericName}</td><td>${m.category}</td><td>${m.batchNo}</td><td>${new Date(m.expDate).toLocaleDateString()}</td><td>${d}</td><td>${m.quantity}</td><td><span class="status-badge status-active">Good</span></td>`;
+      activeMedsInfoTable.appendChild(tr);
+    }
+  });
+};
+document.getElementById('back-to-reports-active').onclick = ()=>{
+  document.querySelector('.reports-cards').style.display='grid';
+  document.querySelector('.charts-container').style.display='grid';
+  document.querySelector('#expiry-report-table').closest('.table-container').style.display='block';
+  document.querySelector('.filters-container').style.display='block';
+  activeMedsTable.style.display='none';
+};
+document.getElementById('print-active-btn').onclick = ()=> printTable('active-meds-info-table');
+document.getElementById('export-active-btn').onclick = ()=>{
+  const data = collectTable('active-meds-info-table');
+  exportToExcel(data,'active-medicines.xlsx'); toast('Active medicines exported');
+};
+
+// Suppliers drilldown + edit
+totalSuppliersCard.onclick = ()=>{
+  document.querySelector('.reports-cards').style.display='none';
+  document.querySelector('.charts-container').style.display='none';
+  document.querySelector('#expiry-report-table').closest('.table-container').style.display='none';
+  document.querySelector('.filters-container').style.display='none';
+  suppliersTable.style.display='block';
+  renderSuppliers();
+};
+function renderSuppliers(){
+  suppliersInfoTable.innerHTML='';
+  suppliers.forEach(s=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML = `<td>${s.name}</td><td>${s.contactNo}</td><td>${s.email}</td><td>${s.address}</td><td><span class="status-badge status-active">${s.status}</span></td><td><button class="action-btn edit-supplier-btn" data-id="${s.id}" title="Edit"><i class="fas fa-edit"></i></button></td>`;
+    suppliersInfoTable.appendChild(tr);
+  });
+  document.querySelectorAll('.edit-supplier-btn').forEach(btn=>btn.onclick=()=>{
+    const id=+btn.dataset.id; const s=suppliers.find(x=>x.id===id); if(!s) return;
+    document.getElementById('edit-supplier-form').dataset.id=id;
+    document.getElementById('edit-supplier-name').value=s.name;
+    document.getElementById('edit-supplier-contact').value=s.contactNo;
+    document.getElementById('edit-supplier-email').value=s.email;
+    document.getElementById('edit-supplier-address').value=s.address;
+    openModal(editSupplierModal);
+  });
+}
+document.getElementById('edit-supplier-form').addEventListener('submit',(e)=>{
+  e.preventDefault();
+  const id=+e.target.dataset.id; const s=suppliers.find(x=>x.id===id); if(!s) return;
+  s.name=document.getElementById('edit-supplier-name').value;
+  s.contactNo=document.getElementById('edit-supplier-contact').value;
+  s.email=document.getElementById('edit-supplier-email').value;
+  s.address=document.getElementById('edit-supplier-address').value;
+  closeModal(editSupplierModal); renderSuppliers(); toast('Supplier updated');
+});
+document.getElementById('back-to-reports').onclick = ()=>{
+  document.querySelector('.reports-cards').style.display='grid';
+  document.querySelector('.charts-container').style.display='grid';
+  document.querySelector('#expiry-report-table').closest('.table-container').style.display='block';
+  document.querySelector('.filters-container').style.display='block';
+  suppliersTable.style.display='none';
+};
+document.getElementById('print-suppliers-btn').onclick = ()=> printTable('suppliers-info-table');
+document.getElementById('export-suppliers-btn').onclick = ()=>{
+  const data = collectTable('suppliers-info-table'); exportToExcel(data,'suppliers.xlsx'); toast('Suppliers exported');
+};
+
+// Expiring this quarter drilldown
+expiringQuarterCard.onclick = ()=>{
+  document.querySelector('.reports-cards').style.display='none';
+  document.querySelector('.charts-container').style.display='none';
+  document.querySelector('#expiry-report-table').closest('.table-container').style.display='none';
+  document.querySelector('.filters-container').style.display='none';
+  expiringQuarterTable.style.display='block';
+  expiringQuarterInfoTable.innerHTML='';
+  medicines.forEach(m=>{
+    const d = daysUntil(m.expDate);
+    if(d>0 && d<=90){
+      const tr=document.createElement('tr');
+      tr.innerHTML = `<td>${m.name}</td><td>${m.genericName}</td><td>${m.batchNo}</td><td>${new Date(m.expDate).toLocaleDateString()}</td><td>${d}</td><td>${m.quantity}</td><td><span class="status-badge status-warning">Expiring Soon</span></td><td><button class="action-btn"><i class="fas fa-edit"></i></button></td>`;
+      expiringQuarterInfoTable.appendChild(tr);
+    }
+  });
+};
+document.getElementById('back-to-reports2').onclick = ()=>{
+  document.querySelector('.reports-cards').style.display='grid';
+  document.querySelector('.charts-container').style.display='grid';
+  document.querySelector('#expiry-report-table').closest('.table-container').style.display='block';
+  document.querySelector('.filters-container').style.display='block';
+  expiringQuarterTable.style.display='none';
+};
+document.getElementById('print-expiring-btn').onclick = ()=> printTable('expiring-quarter-info-table');
+document.getElementById('export-expiring-btn').onclick = ()=>{
+  const data = collectTable('expiring-quarter-info-table');
+  exportToExcel(data,'expiring-quarter.xlsx'); toast('Expiring (90 days) exported');
+};
+
+// ===== Init helpers =====
+function renderAll(){
+  updateDashboard(); updateInventoryPage(); updateReports();
+}
+// Initial render for preview
+renderAll();
+</script>
+
+</body>
+</html>
